@@ -60,12 +60,13 @@ class RedisMiddleware(MiddlewareMixin):
     def process_request(self, request):
         phone = request.redis_cache["username"]
         conn = get_redis_connection("default")
-        # print(conn.hvals(phone))
+        # print(phone), print(conn.hvals(phone))
         if phone.isdigit():
             factory_id = conn.hget(phone, "factory_id")
             permission = conn.hget(phone, "permission")
+            role = conn.hget(phone, "role")
 
-            if not factory_id or not permission:
+            if not factory_id or not permission or not role:
                 # print("middleware------>", "factory_id=", factory_id, "permission=", permission)
                 pgsql = UtilsPostgresql()
                 connection, cursor = pgsql.connect_postgresql()
@@ -74,32 +75,20 @@ class RedisMiddleware(MiddlewareMixin):
                 result = cursor.fetchone()
                 # print("result=", result)
                 if result:
-                    permission, factory_id = result[0], result[1]
-                    # print(phone, permission, factory_id)
-
-                    pl.hset(phone, "permission", permission)
+                    role, factory_id = result[0], result[1]
+                    pl.hset(phone, "role", role)
                     pl.hset(phone, "factory_id", factory_id)
                     pl.execute()
-                else:
-                    cursor.execute("select rights from factory_users where factory = 'hbyl' and phone = '%s';" % phone)
-                    result2 = cursor.fetchone()
-                    # print("result2=", result2)
-                    if result2:
-                        if result2[0] == ["1"]:
-                            cursor.execute("insert into hb_roles (phone, rights, time) VALUES ('%s', 'admin', %d)" % (
-                                            phone, int(time.time())))
-                            connection.commit()
-                            permission, factory_id = "admin", "hbyl"
-                            pl.hset(phone, "permission", permission)
-                            pl.hset(phone, "factory_id", factory_id)
-                            pl.execute()
-                        else:
-                            return HttpResponse("You don't have permission!", status=status.HTTP_403_FORBIDDEN)
-                    else:
-                        return HttpResponse("You don't have permission!", status=status.HTTP_403_FORBIDDEN)
+
+                cursor.execute("select rights from factory_users where factory = 'hbyl' and phone = '%s';" % phone)
+                result2 = cursor.fetchone()[0]
+                # print(result2)
+                if result2:
+                    conn.hset(phone, "permission", ",".join(result2))
 
             request.redis_cache["factory_id"] = factory_id
             request.redis_cache["permission"] = permission
+            request.redis_cache["role"] = role
         else:
             return None
 

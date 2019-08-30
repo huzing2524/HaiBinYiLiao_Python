@@ -202,7 +202,7 @@ IMAGE_PATH = "tenv"
 # 测试环境Redis数据库配置
 REDIS_HOST = os.environ.get("REDIS_HOST") or "47.107.149.151"
 REDIS_PORT = os.environ.get("REDIS_PORT") or "6379"
-REDIS_DATABASE = os.environ.get("REDIS_DATABASE") or "0"
+REDIS_DATABASE = os.environ.get("REDIS_DATABASE") or "1"
 
 CACHES = {
     "default": {

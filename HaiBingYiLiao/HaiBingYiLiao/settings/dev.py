@@ -213,7 +213,7 @@ IMAGE_PATH = "test"
 # 我的Redis数据库配置
 REDIS_HOST = "47.107.149.151"
 REDIS_PORT = "6379"
-REDIS_DATABASE = "0"
+REDIS_DATABASE = "1"
 
 CACHES = {
     "default": {

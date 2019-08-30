@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time   : 19-3-26 上午10:02
 # @Author : huziying
-# @File   : permissions.py
+# @File   : roles.py
 
 from rest_framework.permissions import BasePermission
 
@@ -18,11 +18,11 @@ class SuperAdminPermission(BasePermission):
     """超级管理员权限"""
 
     # 无权限的显示信息
-    message = "You don't have permission! 您没有权限查看！"
+    message = "您没有权限查看！"
 
     def has_permission(self, request, view):
-        permission = request.redis_cache["permission"]
-        if permission == "admin":
+        role = request.redis_cache["role"]
+        if role == "admin":
             return True
         else:
             return False
@@ -32,12 +32,12 @@ class CommonAdminPermission(BasePermission):
     """普通管理员权限"""
 
     # 无权限的显示信息
-    message = "You don't have permission! 您没有权限查看！"
+    message = "您没有权限查看！"
 
     def has_permission(self, request, view):
-        permission = request.redis_cache["permission"]
-        # print("permission=", permission)
-        if permission == "common" or permission == "admin":
+        role = request.redis_cache["role"]
+        # print("role=", role)
+        if role == "common" or role == "admin":
             return True
         else:
             return False
@@ -47,11 +47,11 @@ class DoctorPermission(BasePermission):
     """医生权限"""
 
     # 无权限的显示信息
-    message = "You don't have permission! 您没有权限查看！"
+    message = "您没有权限查看！"
 
     def has_permission(self, request, view):
-        permission = request.redis_cache["permission"]
-        if permission == "doctor":
+        role = request.redis_cache["role"]
+        if role == "doctor":
             return True
         else:
             return False
@@ -61,11 +61,11 @@ class AllPermission(BasePermission):
     """超级管理员/普通管理员/医生的权限"""
 
     # 无权限的显示信息
-    message = "You don't have permission! 您没有权限查看！"
+    message = "您没有权限查看！"
 
     def has_permission(self, request, view):
-        permission = request.redis_cache["permission"]
-        if permission == "admin" or permission == "common" or permission == "doctor":
+        role = request.redis_cache["role"]
+        if role == "admin" or role == "common" or role == "doctor":
             return True
         else:
             return False

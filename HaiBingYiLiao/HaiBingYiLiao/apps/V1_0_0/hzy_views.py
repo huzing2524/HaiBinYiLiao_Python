@@ -124,34 +124,35 @@ class HbManager(APIView):
 
             super_manager, manager = {}, []  # 超级管理员，普通管理员
 
-            super_manager["name"] = result1[0]
-            if isinstance(result1[1], memoryview):
-                temp = result1[1].tobytes().decode()
-                image_url = alioss.joint_image(temp)
-                super_manager["image"] = image_url
-            elif isinstance(result1[1], str):
-                image_url = alioss.joint_image(result1[1])
-                super_manager["image"] = image_url
-
-            for res in result2:
-                di = dict()
-                di["name"] = res[2]
-
-                if isinstance(res[3], memoryview):
-                    temp = res[3].tobytes().decode()
+            if result1:
+                super_manager["name"] = result1[0]
+                if isinstance(result1[1], memoryview):
+                    temp = result1[1].tobytes().decode()
                     image_url = alioss.joint_image(temp)
-                    di["image"] = image_url
-                elif isinstance(res[3], str):
-                    image_url = alioss.joint_image(res[3])
-                    di["image"] = image_url
+                    super_manager["image"] = image_url
+                elif isinstance(result1[1], str):
+                    image_url = alioss.joint_image(result1[1])
+                    super_manager["image"] = image_url
+            if result2:
+                for res in result2:
+                    di = dict()
+                    di["name"] = res[2]
 
-                di["phone"] = res[1]
-                di["time"] = res[4] if res[4] else arrow.now().timestamp
-                invitor = res[5]
-                cursor.execute("select name from user_info where phone = '%s';" % invitor)
-                res = cursor.fetchone()
-                di["invitor"] = res[0] if res else ""
-                manager.append(di)
+                    if isinstance(res[3], memoryview):
+                        temp = res[3].tobytes().decode()
+                        image_url = alioss.joint_image(temp)
+                        di["image"] = image_url
+                    elif isinstance(res[3], str):
+                        image_url = alioss.joint_image(res[3])
+                        di["image"] = image_url
+
+                    di["phone"] = res[1]
+                    di["time"] = res[4] if res[4] else arrow.now().timestamp
+                    invitor = res[5]
+                    cursor.execute("select name from user_info where phone = '%s';" % invitor)
+                    res = cursor.fetchone()
+                    di["invitor"] = res[0] if res else ""
+                    manager.append(di)
 
             return Response({"super_manager": super_manager, "manager": manager}, status=status.HTTP_200_OK)
         except Exception as e:
@@ -207,8 +208,8 @@ class HbManager(APIView):
 
         phone = request.redis_cache["username"]
         factory_id = request.redis_cache["factory_id"]
-        permission = request.redis_cache["permission"]
-        # print(phone, factory_id, permission)
+        role = request.redis_cache["role"]
+        # print(phone, factory_id, role)
 
         pgsql = UtilsPostgresql()
         connection, cursor = pgsql.connect_postgresql()
@@ -226,7 +227,7 @@ class HbManager(APIView):
             # new_phone用户被删除，删除Redis的缓存
             redis_conn = get_redis_connection("default")
             pl = redis_conn.pipeline()
-            pl.hdel(manager, "permission", permission)
+            pl.hdel(manager, "role", role)
             pl.hdel(manager, "factory_id", factory_id)
             pl.execute()
 

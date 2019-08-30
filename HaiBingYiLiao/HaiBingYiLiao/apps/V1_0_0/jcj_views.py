@@ -1119,7 +1119,7 @@ class HbDevicesMain(APIView):
         sql_3 = "select t1.*, coalesce(t2.hospital_name, '') from (select hospital_id, count(1) from " \
                 "hb_treatment_logs t1 group by hospital_id limit 3)t1 left join hb_hospitals t2 on t1.hospital_id =" \
                 " t2.hospital_id order by count desc;"
-        target = ['hospital_id', 'count', 'hospital_name']
+        target = ['id', 'count', 'name']
 
         try:
             cur.execute(sql_3)
