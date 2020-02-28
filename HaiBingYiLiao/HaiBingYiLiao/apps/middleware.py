@@ -84,11 +84,13 @@ class RedisMiddleware(MiddlewareMixin):
                 result2 = cursor.fetchone()
                 # print("result2", result2)
                 if result2:
-                    conn.hset(phone, "permission", ",".join(result2[0]))
+                    permission = result2[0]
+                    conn.hset(phone, "permission", ",".join(permission))
 
             request.redis_cache["factory_id"] = factory_id
             request.redis_cache["permission"] = permission
             request.redis_cache["role"] = role
+            print(request.redis_cache)
         else:
             return None
 
