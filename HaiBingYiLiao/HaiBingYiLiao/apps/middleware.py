@@ -90,7 +90,6 @@ class RedisMiddleware(MiddlewareMixin):
             request.redis_cache["factory_id"] = factory_id
             request.redis_cache["permission"] = permission
             request.redis_cache["role"] = role
-            print(request.redis_cache)
         else:
             return None
 
