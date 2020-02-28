@@ -81,10 +81,10 @@ class RedisMiddleware(MiddlewareMixin):
                     pl.execute()
 
                 cursor.execute("select rights from factory_users where factory = 'hbyl' and phone = '%s';" % phone)
-                result2 = cursor.fetchone()[0]
-                # print(result2)
+                result2 = cursor.fetchone()
+                # print("result2", result2)
                 if result2:
-                    conn.hset(phone, "permission", ",".join(result2))
+                    conn.hset(phone, "permission", ",".join(result2[0]))
 
             request.redis_cache["factory_id"] = factory_id
             request.redis_cache["permission"] = permission

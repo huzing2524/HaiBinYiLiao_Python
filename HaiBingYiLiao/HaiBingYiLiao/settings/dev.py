@@ -58,8 +58,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # "HaiBingYiLiao.apps.middleware.JwtTokenMiddleware",
-    # "HaiBingYiLiao.apps.middleware.RedisMiddleware",
+    "HaiBingYiLiao.apps.middleware.JwtTokenMiddleware",
+    "HaiBingYiLiao.apps.middleware.RedisMiddleware",
 ]
 
 ROOT_URLCONF = 'HaiBingYiLiao.urls'
