@@ -71,6 +71,7 @@ class HbManager(APIView):
     def get(self, request):
         """管理员列表"""
         pgsql = UtilsPostgresql()
+        # print('视图 id(pgsql)--->', id(pgsql))
         connection, cursor = pgsql.connect_postgresql()
         alioss = AliOss()
 
@@ -93,25 +94,20 @@ class HbManager(APIView):
         """
 
         sql_2 = """
-        select 
-          t.rights,
-          t.phone,
-          COALESCE(t1.name, '') as name,
-          COALESCE(t1.image, '') as image,
-          COALESCE(t.time) as time,
-          COALESCE(t.invitor, '') as invitor
-        from
-          (
-          select 
-            *
-          from 
-            hb_roles
-          where 
-            rights = 'common'
-          ) t
-        left join 
-          user_info t1 on 
-        t.phone = t1.phone;
+        select t.phone,
+               COALESCE(t1.name, '')  as name,
+               COALESCE(t1.image, '') as image,
+               t.time                 as time,
+               COALESCE(t2.name, '')  as invitor
+        from (
+                 select *
+                 from hb_roles
+                 where rights = 'common'
+             ) t
+                 left join
+             user_info t1 on
+                 t.phone = t1.phone
+                 left join user_info t2 on t.invitor = t2.phone;
         """
         # print(sql_1, sql_2)
 
@@ -136,22 +132,19 @@ class HbManager(APIView):
             if result2:
                 for res in result2:
                     di = dict()
-                    di["name"] = res[2]
+                    di["phone"] = res[0]
+                    di["name"] = res[1]
 
-                    if isinstance(res[3], memoryview):
-                        temp = res[3].tobytes().decode()
+                    if isinstance(res[2], memoryview):
+                        temp = res[2].tobytes().decode()
                         image_url = alioss.joint_image(temp)
                         di["image"] = image_url
-                    elif isinstance(res[3], str):
-                        image_url = alioss.joint_image(res[3])
+                    elif isinstance(res[2], str):
+                        image_url = alioss.joint_image(res[2])
                         di["image"] = image_url
 
-                    di["phone"] = res[1]
-                    di["time"] = res[4] if res[4] else arrow.now().timestamp
-                    invitor = res[5]
-                    cursor.execute("select name from user_info where phone = '%s';" % invitor)
-                    res = cursor.fetchone()
-                    di["invitor"] = res[0] if res else ""
+                    di["time"] = res[3] if res[3] else arrow.now().timestamp
+                    di["invitor"] = res[4] or ''
                     manager.append(di)
 
             return Response({"super_manager": super_manager, "manager": manager}, status=status.HTTP_200_OK)
@@ -166,9 +159,6 @@ class HbManager(APIView):
         manager_list = request.data.get("manager_list", [])  # list
 
         phone = request.redis_cache["username"]
-        factory_id = request.redis_cache["factory_id"]
-        permission = request.redis_cache["permission"]
-        # print(phone, factory_id, permission)
 
         pgsql = UtilsPostgresql()
         connection, cursor = pgsql.connect_postgresql()
