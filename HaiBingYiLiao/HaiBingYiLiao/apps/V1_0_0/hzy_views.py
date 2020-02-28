@@ -542,35 +542,27 @@ class PatientsStatistics(APIView):
         try:
             if choice == "day":
                 # 过去 按天 日期列表
-                sql_day = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM-DD') as day, " + condition1 + " from hb_treatment_logs " + condition2 + " group by day order by day desc;"
+                sql_day = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM-DD') as day, " + condition1 +\
+                          " from hb_treatment_logs " + condition2 + " group by day order by day desc;"
                 # print(sql_day)
                 cursor.execute(sql_day)
                 result = cursor.fetchall()
 
                 if result:
-                    start = result[-1][0]
-                    range_days = (arrow.now() - arrow.get(start)).days
+                    # start = result[-1][0]
+                    # range_days = (arrow.now() - arrow.get(start)).days
                     # date_list = [arrow.now().shift(days=-i).format("YYYY-MM-DD") for i in range(range_days, -1, -1)]
                     date_list = [arrow.now().shift(days=-i).format("YYYY-MM-DD") for i in range(4, -1, -1)]
             elif choice == "week":
                 # 过去按 星期 日期列表
-                sql_day = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM-DD') as day, " + condition1 + " from hb_treatment_logs " + condition2 + " group by day order by day desc;"
-                cursor.execute(sql_day)
-                result_day = cursor.fetchall()
-
-                if result_day:
-                    start = result_day[-1][0]
-                    range_days = (arrow.now() - arrow.get(start)).days
-                else:
-                    range_days = 0
 
                 # ISO Year和ISO Week的格式，ISO Week有时候只有52周，PostgreSQL的格式化'YYYY-WW'会有53周
-                sql_week = "select to_char(TO_TIMESTAMP(time), 'iyyy-IW') as week, " + condition1 + " from hb_treatment_logs " + condition2 + " group by week order by week desc;"
+                sql_week = "select to_char(TO_TIMESTAMP(time), 'iyyy-IW') as week, " + condition1 +\
+                           " from hb_treatment_logs " + condition2 + " group by week order by week desc;"
                 cursor.execute(sql_week)
                 result = cursor.fetchall()
 
                 if result:
-                    # range_weeks = range_days // 7 + 1
                     range_weeks = 4
                     date_list = [
                         str(arrow.now().shift(weeks=-i).isocalendar()[0]) + "-" + str(
@@ -579,14 +571,15 @@ class PatientsStatistics(APIView):
                         range(range_weeks, -1, -1)]
             elif choice == "month":
                 # 过去 按月 日期列表
-                sql_month = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM') as month, " + condition1 + " from hb_treatment_logs " + condition2 + " group by month order by month desc;"
+                sql_month = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM') as month, " + condition1 +\
+                            " from hb_treatment_logs " + condition2 + " group by month order by month desc;"
                 cursor.execute(sql_month)
                 result = cursor.fetchall()
 
                 if result:
-                    start = result[-1][0]
-                    range_months = abs((arrow.now().date().year - arrow.get(
-                        start).date().year)) * 12 + arrow.now().date().month - arrow.get(start).date().month
+                    # start = result[-1][0]
+                    # range_months = abs((arrow.now().date().year - arrow.get(
+                    #     start).date().year)) * 12 + arrow.now().date().month - arrow.get(start).date().month
                     # date_list = [arrow.now().shift(months=-i).format("YYYY-MM") for i in range(range_months, -1, -1)]
                     date_list = [arrow.now().shift(months=-i).format("YYYY-MM") for i in range(4, -1, -1)]
             else:
