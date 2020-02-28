@@ -58,8 +58,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "HaiBingYiLiao.apps.middleware.JwtTokenMiddleware",
-    "HaiBingYiLiao.apps.middleware.RedisMiddleware",
+    # "HaiBingYiLiao.apps.middleware.JwtTokenMiddleware",
+    # "HaiBingYiLiao.apps.middleware.RedisMiddleware",
 ]
 
 ROOT_URLCONF = 'HaiBingYiLiao.urls'
@@ -151,13 +151,13 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
         'file': {
-            'level': 'ERROR',
+            'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(os.path.dirname(BASE_DIR), "logs/background.log"),
             'maxBytes': 300 * 1024 * 1024,
@@ -169,7 +169,7 @@ LOGGING = {
         'django': {
             'handlers': ['console', 'file'],
             'propagate': True,
-            'level': 'ERROR',
+            'level': 'INFO',
         },
     }
 }
@@ -184,11 +184,11 @@ REST_FRAMEWORK = {
 POSTGRESQL_DATABASE = "dsd"
 POSTGRESQL_USER = "postgres"
 POSTGRESQL_PASSWORD = "123456"
-POSTGRESQL_HOST = "47.107.149.151"
+POSTGRESQL_HOST = "127.0.0.1"
 POSTGRESQL_PORT = "5432"
 
 # 我的RabbitMQ配置
-RABBITMQ_HOST = '47.107.149.151'
+RABBITMQ_HOST = '127.0.0.1'
 RABBITMQ_PORT = '5672'
 
 # 徐波本地环境数据库
@@ -211,7 +211,7 @@ RABBITMQ_PORT = '5672'
 IMAGE_PATH = "test"
 
 # 我的Redis数据库配置
-REDIS_HOST = "47.107.149.151"
+REDIS_HOST = "127.0.0.1"
 REDIS_PORT = "6379"
 REDIS_DATABASE = "1"
 
