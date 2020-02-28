@@ -36,7 +36,7 @@ class RightsInfo(APIView):
     """查询用户的权限信息 hb/rights/info"""
 
     def get(self, request):
-        phone = request.query_params.get("phone")  # 手机号码
+        phone = request.query_params.get("phone", "")  # 手机号码
         if not re.match("^(13[0-9]|14[579]|15[0-3,5-9]|16[6]|17[0135678]|18[0-9]|19[89])\\d{8}$", phone):
             return Response({"res": 1, "errmsg": "bad phone number format! 电话号码格式错误"}, status=status.HTTP_200_OK)
 
