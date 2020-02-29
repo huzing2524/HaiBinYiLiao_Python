@@ -2,6 +2,7 @@ import logging
 import arrow
 import calendar
 
+from django.db import connection as conn
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,8 +24,7 @@ class HbHospital(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         hospital_id = request.query_params.get("hospital_id")
 
@@ -39,12 +39,10 @@ class HbHospital(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
     def post(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         name = request.data.get("hospital_name")
         contact = request.data.get("contacts", "")
@@ -76,12 +74,10 @@ class HbHospital(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response({'res': 0}, status=status.HTTP_200_OK)
 
     def put(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         hospital_id = request.data.get("hospital_id")
         name = request.data.get("hospital_name")
@@ -115,12 +111,10 @@ class HbHospital(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response({'res': 0}, status=status.HTTP_200_OK)
 
     def delete(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         hospital_id = request.query_params.get("hospital_id")
 
@@ -139,7 +133,6 @@ class HbHospital(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response({'res': 0}, status=status.HTTP_200_OK)
 
 
@@ -148,8 +141,7 @@ class HbHospitalListType(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, Type):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         row = request.query_params.get('row', 10)
         page = request.query_params.get('page', 1)
@@ -168,7 +160,6 @@ class HbHospitalListType(APIView):
                   "t2.hospital_id = t1.hospital_id and t2.active = '0' where t1.active = '0' group by " \
                   "t1.hospital_id)t where rn > {} limit {};".format(offset, limit)
         else:
-            postgresql.disconnect_postgresql(conn)
             return Response({"res": 1, "errmsg": '路径参数类型有误'}, status=status.HTTP_200_OK)
 
         target = ['hospital_id', 'hospital_name', 'count']
@@ -180,7 +171,6 @@ class HbHospitalListType(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -189,8 +179,7 @@ class HbDeviceBinding(APIView):
     permission_classes = [CommonAdminPermission]
 
     def post(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         hospital_id = request.data.get("hospital_id")
         device_id = request.data.get("device_id", list())
@@ -212,7 +201,6 @@ class HbDeviceBinding(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response({'res': 0}, status=status.HTTP_200_OK)
 
 
@@ -221,8 +209,7 @@ class HbDeviceDelete(APIView):
     permission_classes = [CommonAdminPermission]
 
     def delete(self, request, Id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         # Id = request.data.get("id")
 
@@ -235,7 +222,6 @@ class HbDeviceDelete(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response({'res': 0}, status=status.HTTP_200_OK)
 
 
@@ -244,8 +230,7 @@ class HbDoctorsBinding(APIView):
     permission_classes = [CommonAdminPermission]
 
     def post(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         hospital_id = request.data.get("hospital_id")
         doctor_phone = request.data.get("doctor_phone", list())
@@ -274,7 +259,6 @@ class HbDoctorsBinding(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response({'res': 0}, status=status.HTTP_200_OK)
 
 
@@ -283,8 +267,7 @@ class HbHospitalsMain(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         today_start = today_timestamp()[0]
 
@@ -303,7 +286,6 @@ class HbHospitalsMain(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -312,8 +294,7 @@ class HbHospitalDetailId(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, Id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         # 过去五天日期列表
         date_list = [arrow.now().shift(days=-i).format("MM.DD") for i in range(4, -1, -1)]
@@ -413,7 +394,6 @@ class HbHospitalDetailId(APIView):
         result['images'] = images
         result['devices_detail'] = devices_detail
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -422,8 +402,7 @@ class HbDoctorsList(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         Id = request.query_params.get('hospital_id')
         # factory_id = 'hbyl'
@@ -460,7 +439,6 @@ class HbDoctorsList(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -469,8 +447,7 @@ class HbHospitalDoctorId(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, Id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         condition = "and time > {} and time < {}"
         start_end = list()
@@ -520,12 +497,10 @@ class HbHospitalDoctorId(APIView):
         result['treatment_stats'] = treatment_stats
         result['patients_stats'] = patients_stats
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
     def delete(self, request, Id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         sql_0 = "update hb_doctors set active = '1' where doctor_phone = '{}';".format(Id)
         sql_1 = "delete from hb_roles where phone = '{}';".format(Id)
@@ -537,7 +512,6 @@ class HbHospitalDoctorId(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response({'res': 0}, status=status.HTTP_200_OK)
 
 
@@ -546,8 +520,7 @@ class HbDeviceDetailId(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, Id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         # 检查设备是否已经绑定医院
         sql = "select count(1) from hb_equipments where equipment_id = '{}';".format(Id)
@@ -644,7 +617,6 @@ class HbDeviceDetailId(APIView):
         result['doctor_rank'] = doctor_rank
         result['patients_analysis'] = patients_analysis
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -653,8 +625,7 @@ class HbPatientsAnalysisId(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, device_id, hospital_id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         Type = request.query_params.get('type', 'daily')
         date = request.query_params.get('date')
@@ -805,7 +776,6 @@ class HbPatientsAnalysisId(APIView):
         result['treatment_part'] = treatment_part
         result['patients_change'] = patients_change
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -815,8 +785,7 @@ class HbPatientsCalendarIdType(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, device_id, hospital_id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         Type = request.query_params.get('type', 'daily')
 
@@ -839,7 +808,6 @@ class HbPatientsCalendarIdType(APIView):
         elif Type == 'weekly':
             sql = "select count(distinct patient_id) from hb_treatment_logs where time >= {} and time < {} %s;" % condition
         else:
-            postgresql.disconnect_postgresql(conn)
             return Response({"res": 1, "errmsg": '日期类型参数有误'}, status=status.HTTP_200_OK)
         target = ['date', 'count']
 
@@ -870,7 +838,6 @@ class HbPatientsCalendarIdType(APIView):
             cur.execute(sql.format(start_timestamp, condition))
             result = [dict(zip(target, i)) for i in cur.fetchall()]
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -879,8 +846,7 @@ class HbDeviceHospitalRankId(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, Id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         Type = request.query_params.get('type', 'daily')
         date = request.query_params.get('date')
@@ -940,7 +906,6 @@ class HbDeviceHospitalRankId(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -949,8 +914,7 @@ class HbDeviceHospitalCalendarIdType(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, Id, Type):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         if Id == 'all':
             condition_1 = ""
@@ -966,7 +930,6 @@ class HbDeviceHospitalCalendarIdType(APIView):
         elif Type == 'weekly':
             sql = "select count(1) from hb_treatment_logs where time >= {} and time < {} %s;" % condition_1
         else:
-            postgresql.disconnect_postgresql(conn)
             return Response({"res": 1, "errmsg": '日期类型参数有误'}, status=status.HTTP_200_OK)
         target = ['date', 'count']
 
@@ -1006,7 +969,6 @@ class HbDeviceHospitalCalendarIdType(APIView):
             cur.execute(sql.format(start_timestamp, condition_1))
             result = [dict(zip(target, i)) for i in cur.fetchall()]
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -1015,8 +977,7 @@ class HbDoctorRankId(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, device_id, hospital_id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         Type = request.query_params.get('type', 'daily')
         date = request.query_params.get('date')
@@ -1086,7 +1047,6 @@ class HbDoctorRankId(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -1095,8 +1055,7 @@ class HbDevicesMain(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         # 过去五天使用列表
         date_list = [arrow.now().shift(days=-i).format("MM.DD") for i in range(4, -1, -1)]
@@ -1164,7 +1123,6 @@ class HbDevicesMain(APIView):
         result['hospital_rank'] = hospital_rank
         result['patients_analysis'] = patients_analysis
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -1173,8 +1131,7 @@ class HbDevicesList(APIView):
     permission_classes = [AllPermission]
 
     def get(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         # 0: 未绑定医院的设备列表，返回一个数组
         # 1: 全部的设备列表，按医院分类
@@ -1221,7 +1178,6 @@ class HbDevicesList(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -1230,8 +1186,7 @@ class HbBossMain(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         sql_1 = "select count(1) from hb_devices union all select count(1) from hb_equipments union all select " \
                 "count(1) from hb_doctors where active = '0' union all select count(1) from hb_hospitals where " \
@@ -1263,7 +1218,6 @@ class HbBossMain(APIView):
         result['patients_summary'] = {'patients_total': tmp[4][0], 'per_hospital': round(tmp[4][0] / tmp[3][0]) if tmp[1][0] else 0,
                                       'per_device': round(tmp[4][0] / tmp[0][0]) if tmp[0][0] else 0, 'month': month}
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -1272,8 +1226,7 @@ class HbRechargeList(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         row = request.query_params.get('row', 10)
         page = request.query_params.get('page', 1)
@@ -1301,7 +1254,6 @@ class HbRechargeList(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -1310,8 +1262,7 @@ class HbRechargeDetailId(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, Id):
-        postgresql = UtilsPostgresql()
-        conn, cur = postgresql.connect_postgresql()
+        cur = conn.cursor()
 
         sql = "select t1.equipment_id, recharge_counts, user_phone, state, t1.time, t3.hospital_name, " \
               "coalesce(t4.name, '') as user_name, t4.image, coalesce(t5.name, '') as equipment_name from " \
@@ -1333,5 +1284,4 @@ class HbRechargeDetailId(APIView):
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        postgresql.disconnect_postgresql(conn)
         return Response(result, status=status.HTTP_200_OK)

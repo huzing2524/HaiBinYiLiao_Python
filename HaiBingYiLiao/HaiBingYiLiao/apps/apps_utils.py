@@ -26,6 +26,7 @@ def generate_uuid():
 class UtilsPostgresql(AbstractConnectionPool):
     """Postgresql数据库连接池
     单例模式: 保证只创建一个对象
+    舍弃使用连接池 ---> 会导致执行sql语句时, 时间日期错误的问题, 原因未知
     """
     _instance = None
 

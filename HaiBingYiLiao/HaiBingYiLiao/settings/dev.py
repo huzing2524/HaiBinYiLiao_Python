@@ -86,11 +86,26 @@ WSGI_APPLICATION = 'HaiBingYiLiao.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+# 开发环境 我的数据库配置
+POSTGRESQL_DATABASE = "dsd"
+POSTGRESQL_USER = "postgres"
+POSTGRESQL_PASSWORD = "123456"
+POSTGRESQL_HOST = "127.0.0.1"
+POSTGRESQL_PORT = "5432"
+
 DATABASES = {
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     # }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': POSTGRESQL_DATABASE,
+        'USER': POSTGRESQL_USER,
+        'PASSWORD': POSTGRESQL_PASSWORD,
+        'HOST': POSTGRESQL_HOST,
+        'PORT': POSTGRESQL_PORT,
+    }
 }
 
 
@@ -180,27 +195,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ()
 }
 
-# 开发环境 我的数据库配置
-POSTGRESQL_DATABASE = "dsd"
-POSTGRESQL_USER = "postgres"
-POSTGRESQL_PASSWORD = "123456"
-POSTGRESQL_HOST = "127.0.0.1"
-POSTGRESQL_PORT = "5432"
-
 # 我的RabbitMQ配置
 RABBITMQ_HOST = '127.0.0.1'
 RABBITMQ_PORT = '5672'
-
-# 徐波本地环境数据库
-# POSTGRESQL_DATABASE = "imd2"
-# POSTGRESQL_USER = "imd2"
-# POSTGRESQL_PASSWORD = "imd2"
-# POSTGRESQL_HOST = "192.168.0.105"
-# POSTGRESQL_PORT = "5432"
-
-# 徐波的本地RabbitMQ配置
-# RABBITMQ_HOST = '192.168.0.105'
-# RABBITMQ_PORT = '5672'
 
 # 图片存储路径
 """

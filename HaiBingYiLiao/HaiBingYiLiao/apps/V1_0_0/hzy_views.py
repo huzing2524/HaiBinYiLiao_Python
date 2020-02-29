@@ -3,19 +3,20 @@ import re
 import arrow
 import isoweek
 import jwt
-from django.conf import settings
 import logging
 import time
 import datetime
 
+from django.db import connection
+from django.conf import settings
 from django_redis import get_redis_connection
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps_utils import UtilsPostgresql, AliOss, month_timestamp, someday_timestamp, UtilsRabbitmq, generate_uuid
+from apps_utils import AliOss, month_timestamp, UtilsRabbitmq, generate_uuid
 from constants import ROW
-from permissions import SuperAdminPermission, DoctorPermission, CommonAdminPermission, AllPermission
+from permissions import DoctorPermission, CommonAdminPermission, AllPermission
 
 logger = logging.getLogger('django')
 
@@ -40,8 +41,7 @@ class RightsInfo(APIView):
         if not re.match("^(13[0-9]|14[579]|15[0-3,5-9]|16[6]|17[0135678]|18[0-9]|19[89])\\d{8}$", phone):
             return Response({"res": 1, "errmsg": "bad phone number format! 电话号码格式错误"}, status=status.HTTP_200_OK)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
         try:
             cursor.execute("select rights from factory_users where phone = '%s';" % phone)
             rights = cursor.fetchone()
@@ -54,8 +54,6 @@ class RightsInfo(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class HbManager(APIView):
@@ -70,9 +68,7 @@ class HbManager(APIView):
 
     def get(self, request):
         """管理员列表"""
-        pgsql = UtilsPostgresql()
-        # print('视图 id(pgsql)--->', id(pgsql))
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
         alioss = AliOss()
 
         sql_1 = """
@@ -151,8 +147,6 @@ class HbManager(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
     def post(self, request):
         """添加普通管理员"""
@@ -160,8 +154,7 @@ class HbManager(APIView):
 
         phone = request.redis_cache["username"]
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         try:
             for manager in manager_list:
@@ -187,8 +180,6 @@ class HbManager(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
     def delete(self, request):
         """删除普通管理员"""
@@ -201,8 +192,7 @@ class HbManager(APIView):
         role = request.redis_cache["role"]
         # print(phone, factory_id, role)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         try:
             cursor.execute("select count(*) from factory_users where phone = '%s' and factory = '%s' and "
@@ -225,8 +215,6 @@ class HbManager(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class UserList(APIView):
@@ -238,13 +226,9 @@ class UserList(APIView):
         row = int(request.query_params.get("row", ROW))
         offset = (page - 1) * row
 
-        phone = request.redis_cache["username"]
         factory_id = request.redis_cache["factory_id"]
-        permission = request.redis_cache["permission"]
-        # print(phone, factory_id, permission)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
         alioss = AliOss()
 
         sql = """
@@ -296,8 +280,6 @@ class UserList(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class RightsOrg(APIView):
@@ -316,8 +298,7 @@ class PatientsMain(APIView):
     permission_classes = [CommonAdminPermission]
 
     def get(self, request):
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
         alioss = AliOss()
 
         start_timestamp, end_timestamp = month_timestamp(datetime.datetime.now().year, datetime.datetime.now().month)
@@ -460,8 +441,6 @@ class PatientsMain(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class PatientsStatistics(APIView):
@@ -485,8 +464,7 @@ class PatientsStatistics(APIView):
         hospital_id = request.query_params.get("hospital_id")  # 医院id
         usage = request.query_params.get("usage")  # 复用：patients/devices
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         if usage == "patients":
             condition1 = " count(distinct patient_id) "
@@ -640,8 +618,6 @@ class PatientsStatistics(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class PatientsList(APIView):
@@ -655,8 +631,7 @@ class PatientsList(APIView):
         row = int(request.query_params.get("row", ROW))
         offset = (page - 1) * row
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         data = []
 
@@ -737,8 +712,6 @@ class PatientsList(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class PatientsTreatmentRecords(APIView):
@@ -752,8 +725,7 @@ class PatientsTreatmentRecords(APIView):
         row = int(request.query_params.get("row", ROW))
         offset = (page - 1) * row
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         if type_ == "hospital" and id_:  # 某个医院的治疗记录
             condition = """
@@ -825,8 +797,6 @@ class PatientsTreatmentRecords(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class PatientDetail(APIView):
@@ -841,8 +811,7 @@ class PatientDetail(APIView):
         row = int(request.query_params.get("row", ROW))
         offset = (page - 1) * row
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
         alioss = AliOss()
 
         sql_1 = """
@@ -1004,8 +973,6 @@ class PatientDetail(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
     def put(self, request, id):
         """修改患者详情"""
@@ -1026,8 +993,7 @@ class PatientDetail(APIView):
         if not all([patient_name, gender, birthday, new_phone]):
             return Response({"res": 1, "errmsg": "缺少参数！"}, status=status.HTTP_200_OK)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         cursor.execute("select count(1) from hb_patients where patient_phone = '%s';" % id)
         id_check = cursor.fetchone()[0]
@@ -1067,16 +1033,13 @@ class PatientDetail(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
     def delete(self, request, id):
         """删除患者"""
         if not id:
             return Response({"res": 1, "errmsg": "缺少参数用户id！"}, status=status.HTTP_200_OK)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         cursor.execute("select count(1) from hb_patients where patient_phone = '%s';" % id)
         id_check = cursor.fetchone()[0]
@@ -1091,8 +1054,6 @@ class PatientDetail(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 # 医生-------------------------------------------------------------------------------------------------------------------
@@ -1124,8 +1085,7 @@ class PatientNew(APIView):
         permission = request.redis_cache["permission"]
         # print(phone, factory_id, permission)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         cursor.execute("select count(1) from hb_patients where patient_phone = '%s';" % patient_phone)
         phone_check = cursor.fetchone()[0]
@@ -1145,8 +1105,6 @@ class PatientNew(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class DoctorMain(APIView):
@@ -1155,12 +1113,20 @@ class DoctorMain(APIView):
 
     def get(self, request):
         doctor_phone = request.redis_cache["username"]
-        factory_id = request.redis_cache["factory_id"]
-        permission = request.redis_cache["permission"]
-        # print(phone, factory_id, permission)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        '''舍弃使用连接池 ---> 会导致执行sql语句时, 时间日期错误的问题
+        select to_char(TO_TIMESTAMP(time), 'YYYY-MM-DD') as day, count(1) from hb_treatment_logs group by day 
+        order by day desc;
+        
+        1. 使用数据库连接池 pgsql = UtilsPostgresql(), 执行结果是 result2= {'2020-02-29': 1, '2020-02-28': 1}
+        2. 使用 Django的 from django.db import connection, 执行结果是 result2= {'2020-02-29': 2}
+        '''
+        # 时间日期错误
+        # pgsql = UtilsPostgresql()
+        # connection, cursor = pgsql.connect_postgresql()
+
+        # 使用Django自带数据库连接
+        cursor = connection.cursor()
         alioss = AliOss()
 
         sql_1 = """
@@ -1249,8 +1215,6 @@ class DoctorMain(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class DoctorHbManager(APIView):
@@ -1263,8 +1227,7 @@ class DoctorHbManager(APIView):
         permission = request.redis_cache["permission"]
         # print(phone, factory_id, permission)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
         alioss = AliOss()
 
         sql = """
@@ -1310,8 +1273,6 @@ class DoctorHbManager(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class DoctorTreatmentRecordNew(APIView):
@@ -1329,8 +1290,7 @@ class DoctorTreatmentRecordNew(APIView):
         permission = request.redis_cache["permission"]
         # print(doctor_phone, factory_id, permission)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         cursor.execute("select hospital_id from hb_doctors where doctor_phone = '%s' and active = '0';" % doctor_phone)
         result1 = cursor.fetchone()
@@ -1361,8 +1321,6 @@ class DoctorTreatmentRecordNew(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class DoctorPatientsList(APIView):
@@ -1374,8 +1332,7 @@ class DoctorPatientsList(APIView):
         row = int(request.query_params.get("row", ROW))
         offset = (page - 1) * row
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         data = []
 
@@ -1452,8 +1409,6 @@ class DoctorPatientsList(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 class DoctorTreatmentRecords(APIView):
@@ -1463,8 +1418,7 @@ class DoctorTreatmentRecords(APIView):
     def get(self, request):
         id_ = request.query_params.get("id")  # 某个患者的手机号
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         sql = """
         select
@@ -1523,8 +1477,6 @@ class DoctorTreatmentRecords(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
 
 
 # 设备充值----------------------------------------------------------------------------------------------------------------
@@ -1539,8 +1491,7 @@ class EquipmentRecharge(APIView):
         if not all([device_id, recharge_times]):
             return Response({"res": 1, "errmsg": "缺少参数"}, status=status.HTTP_200_OK)
 
-        pgsql = UtilsPostgresql()
-        connection, cursor = pgsql.connect_postgresql()
+        cursor = connection.cursor()
 
         phone = request.redis_cache["username"]
         factory_id = request.redis_cache["factory_id"]
@@ -1570,5 +1521,3 @@ class EquipmentRecharge(APIView):
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器错误！"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        finally:
-            pgsql.disconnect_postgresql(connection)
