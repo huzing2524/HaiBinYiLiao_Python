@@ -8,10 +8,10 @@ import jwt
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils.deprecation import MiddlewareMixin
-from rest_framework import status
 from django_redis import get_redis_connection
+from django.db import connection
+from rest_framework import status
 
-from .apps_utils import UtilsPostgresql
 from .constants import REDIS_CACHE
 
 
@@ -68,8 +68,7 @@ class RedisMiddleware(MiddlewareMixin):
 
             if not factory_id or not permission or not role:
                 # print("middleware------>", "factory_id=", factory_id, "permission=", permission)
-                pgsql = UtilsPostgresql()
-                connection, cursor = pgsql.connect_postgresql()
+                cursor = connection.cursor()
                 pl = conn.pipeline()
                 cursor.execute("select rights, factory from hb_roles where phone = '%s';" % phone)
                 result = cursor.fetchone()

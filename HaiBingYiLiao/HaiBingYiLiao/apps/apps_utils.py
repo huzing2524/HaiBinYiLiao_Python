@@ -23,33 +23,33 @@ def generate_uuid():
     return u18
 
 
-class UtilsPostgresql(AbstractConnectionPool):
-    """Postgresql数据库连接池
-    单例模式: 保证只创建一个对象
-    舍弃使用连接池 ---> 会导致执行sql语句时, 时间日期错误的问题, 原因未知
-    """
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):  # 创建对象
-        if cls._instance is None:
-            cls._instance = super().__new__(cls, *args, **kwargs)
-
-        # print('cls._instance', cls._instance, 'id--->', id(cls._instance))
-        return cls._instance
-
-    def __init__(self):  # 初始化对象
-        super().__init__(minconn=5, maxconn=20, database=settings.POSTGRESQL_DATABASE, user=settings.POSTGRESQL_USER,
-                         password=settings.POSTGRESQL_PASSWORD, host=settings.POSTGRESQL_HOST,
-                         port=settings.POSTGRESQL_PORT)
-
-    def connect_postgresql(self):
-        connection = AbstractConnectionPool._getconn(self)
-        cursor = connection.cursor()
-        # print(connection)
-        return connection, cursor
-
-    def disconnect_postgresql(self, connection):
-        AbstractConnectionPool._putconn(self, connection)
+# class UtilsPostgresql(AbstractConnectionPool):
+#     """Postgresql数据库连接池
+#     单例模式: 保证只创建一个对象
+#     舍弃使用连接池 ---> 会导致执行sql语句时, 时间日期错误的问题, 原因未知
+#     """
+#     _instance = None
+#
+#     def __new__(cls, *args, **kwargs):  # 创建对象
+#         if cls._instance is None:
+#             cls._instance = super().__new__(cls, *args, **kwargs)
+#
+#         # print('cls._instance', cls._instance, 'id--->', id(cls._instance))
+#         return cls._instance
+#
+#     def __init__(self):  # 初始化对象
+#         super().__init__(minconn=5, maxconn=20, database=settings.POSTGRESQL_DATABASE, user=settings.POSTGRESQL_USER,
+#                          password=settings.POSTGRESQL_PASSWORD, host=settings.POSTGRESQL_HOST,
+#                          port=settings.POSTGRESQL_PORT)
+#
+#     def connect_postgresql(self):
+#         connection = AbstractConnectionPool._getconn(self)
+#         cursor = connection.cursor()
+#         # print(connection)
+#         return connection, cursor
+#
+#     def disconnect_postgresql(self, connection):
+#         AbstractConnectionPool._putconn(self, connection)
 
 
 class UtilsRabbitmq(object):
