@@ -756,11 +756,16 @@ class HbPatientsAnalysisId(APIView):
                     date_start = datetime.datetime.fromtimestamp(i[0])
                     date_end = datetime.datetime.fromtimestamp(i[1])
                     cur.execute(sql_4.format(condition_1, i[0], i[1]))
+                    weekly_count = cur.fetchone()[0]
                     week_date = '%s-%s' % (date_start.strftime('%m.%d'), date_end.strftime('%m.%d'))
-                    recent_patients.append({'date': week_date, 'count': 0})
+                    # recent_patients.append({'date': week_date, 'count': 0})  # BUG: 按周查询取结果, value不应为0
+                    recent_patients.append({'date': week_date, 'count': weekly_count})
 
+            # BUG: 当前日/周/月 与 昨日/上周/上个月 相比, 取索引错误
+            # patients_change = {'date': recent_patients[-1]['date'], 'type': date_type,
+            #                    'change': recent_patients[-1]['count'] - recent_patients[1]['count']}
             patients_change = {'date': recent_patients[-1]['date'], 'type': date_type,
-                               'change': recent_patients[-1]['count'] - recent_patients[1]['count']}
+                               'change': recent_patients[-1]['count'] - recent_patients[-2]['count']}
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
