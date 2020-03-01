@@ -3,6 +3,7 @@ import arrow
 import calendar
 
 from django.db import connection as conn
+from django_redis import get_redis_connection
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -118,17 +119,26 @@ class HbHospital(APIView):
 
         hospital_id = request.query_params.get("hospital_id")
 
+        sql_0 = "select doctor_phone from hb_doctors where hospital_id = '{}';".format(hospital_id)
         sql_1 = "update hb_hospitals set active = '1' where hospital_id = '{}';".format(hospital_id)
         sql_2 = "update hb_doctors set active = '1' where hospital_id = '{}';".format(hospital_id)
         sql_3 = "delete from hb_equipments where hospital_id = '{}';".format(hospital_id)
-        sql_4 = "delete from hb_roles where phone in (select doctor_phone from hb_doctors where hospital_id = '{}');".format(hospital_id)
+        sql_4 = "delete from hb_roles where phone in (select doctor_phone from hb_doctors where " \
+                "hospital_id = '{}');".format(hospital_id)
 
         try:
+            cur.execute(sql_0)
+            doctor_phone_list = cur.fetchall()
             cur.execute(sql_1)
             cur.execute(sql_2)
             cur.execute(sql_3)
             cur.execute(sql_4)
             conn.commit()
+
+            # 删除医生的redis缓存权限
+            redis_conn = get_redis_connection("default")
+            for doctor in doctor_phone_list:
+                redis_conn.hdel(doctor[0], 'role', 'factory_id', 'permission')
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
