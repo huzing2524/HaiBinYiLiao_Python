@@ -518,6 +518,11 @@ class HbHospitalDoctorId(APIView):
             cur.execute(sql_0)
             cur.execute(sql_1)
             conn.commit()
+
+            # 删除医生的redis缓存权限
+            redis_conn = get_redis_connection("default")
+            redis_conn.hdel(Id, 'role', 'factory_id', 'permission')
+
         except Exception as e:
             logger.error(e)
             return Response({"res": 1, "errmsg": "服务器异常"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
