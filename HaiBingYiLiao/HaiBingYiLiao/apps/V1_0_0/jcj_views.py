@@ -802,6 +802,7 @@ class HbPatientsAnalysisId(APIView):
 class HbPatientsCalendarIdType(APIView):
     """治疗患者日历统计 hb/patient/calendar/{device_id}/{hospital_id}"""
     """医生排行日历统计 hb/doctor/calendar/{device_id}/{hospital_id}"""
+    '''此API疑似被废弃, 找不到对应的界面'''
     permission_classes = [CommonAdminPermission]
 
     def get(self, request, device_id, hospital_id):
@@ -833,6 +834,7 @@ class HbPatientsCalendarIdType(APIView):
 
         result = []
         if Type == 'weekly':
+            '''BUG: 按周查询返回数据格式有问题'''
             start_timestamp = week_timestamp()[1]
             tmp = list()
             result = list()
