@@ -520,7 +520,7 @@ class PatientsStatistics(APIView):
         try:
             if choice == "day":
                 # 过去 按天 日期列表
-                sql_day = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM-DD') as day, " + condition1 +\
+                sql_day = "select to_char(TO_TIMESTAMP(time), 'YYYY.MM.DD') as day, " + condition1 +\
                           " from hb_treatment_logs " + condition2 + " group by day order by day desc;"
                 # print(sql_day)
                 cursor.execute(sql_day)
@@ -529,13 +529,13 @@ class PatientsStatistics(APIView):
                 if result:
                     # start = result[-1][0]
                     # range_days = (arrow.now() - arrow.get(start)).days
-                    # date_list = [arrow.now().shift(days=-i).format("YYYY-MM-DD") for i in range(range_days, -1, -1)]
-                    date_list = [arrow.now().shift(days=-i).format("YYYY-MM-DD") for i in range(4, -1, -1)]
+                    # date_list = [arrow.now().shift(days=-i).format("YYYY.MM.DD") for i in range(range_days, -1, -1)]
+                    date_list = [arrow.now().shift(days=-i).format("YYYY.MM.DD") for i in range(4, -1, -1)]
             elif choice == "week":
                 # 过去按 星期 日期列表
 
-                # ISO Year和ISO Week的格式，ISO Week有时候只有52周，PostgreSQL的格式化'YYYY-WW'会有53周
-                sql_week = "select to_char(TO_TIMESTAMP(time), 'iyyy-IW') as week, " + condition1 +\
+                # ISO Year和ISO Week的格式，ISO Week有时候只有52周，PostgreSQL的格式化'YYYY.WW'会有53周
+                sql_week = "select to_char(TO_TIMESTAMP(time), 'iyyy.IW') as week, " + condition1 +\
                            " from hb_treatment_logs " + condition2 + " group by week order by week desc;"
                 cursor.execute(sql_week)
                 result = cursor.fetchall()
@@ -543,13 +543,13 @@ class PatientsStatistics(APIView):
                 if result:
                     range_weeks = 4
                     date_list = [
-                        str(arrow.now().shift(weeks=-i).isocalendar()[0]) + "-" + str(
+                        str(arrow.now().shift(weeks=-i).isocalendar()[0]) + "." + str(
                             arrow.now().shift(weeks=-i).isocalendar()[1]).zfill(2)
                         for i in
                         range(range_weeks, -1, -1)]
             elif choice == "month":
                 # 过去 按月 日期列表
-                sql_month = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM') as month, " + condition1 +\
+                sql_month = "select to_char(TO_TIMESTAMP(time), 'YYYY.MM') as month, " + condition1 +\
                             " from hb_treatment_logs " + condition2 + " group by month order by month desc;"
                 cursor.execute(sql_month)
                 result = cursor.fetchall()
@@ -558,8 +558,8 @@ class PatientsStatistics(APIView):
                     # start = result[-1][0]
                     # range_months = abs((arrow.now().date().year - arrow.get(
                     #     start).date().year)) * 12 + arrow.now().date().month - arrow.get(start).date().month
-                    # date_list = [arrow.now().shift(months=-i).format("YYYY-MM") for i in range(range_months, -1, -1)]
-                    date_list = [arrow.now().shift(months=-i).format("YYYY-MM") for i in range(4, -1, -1)]
+                    # date_list = [arrow.now().shift(months=-i).format("YYYY.MM") for i in range(range_months, -1, -1)]
+                    date_list = [arrow.now().shift(months=-i).format("YYYY.MM") for i in range(4, -1, -1)]
             else:
                 return Response({"res": 1, "errmsg": "时间类型参数错误！"})
 
@@ -568,24 +568,24 @@ class PatientsStatistics(APIView):
             for date in date_list:
                 if choice == "week":
                     # 从ISO week周数获取对应的日期列表, datetime.date类型
-                    transform_list = isoweek.Week(int(date.split("-")[0]), int(date.split("-")[-1])).days()
+                    transform_list = isoweek.Week(int(date.split(".")[0]), int(date.split(".")[-1])).days()
                     # 日期列表，字符串
-                    days_list = [day.strftime("%Y-%m-%d") for day in transform_list]
-                    monday = days_list[0].replace("-", ".").split('.')[1:]
-                    sunday = days_list[-1].replace("-", ".").split('.')[1:]
+                    days_list = [day.strftime("%Y.%m.%d") for day in transform_list]
+                    monday = days_list[0].split('.')[1:]
+                    sunday = days_list[-1].split('.')[1:]
                     if date in temp:
                         summary.append(
-                            {"iso_weeks": date.replace("-", "."), "count": temp[date],
+                            {"iso_weeks": date, "count": temp[date],
                              "date": '.'.join(monday) + "-" + '.'.join(sunday)})
                     else:
                         summary.append(
-                            {"iso_weeks": date.replace("-", "."), "count": 0,
+                            {"iso_weeks": date, "count": 0,
                              "date": '.'.join(monday) + "-" + '.'.join(sunday)})
                 else:
                     if date in temp:
-                        summary.append({"date": date.replace("-", "."), "count": temp[date]})
+                        summary.append({"date": date, "count": temp[date]})
                     else:
-                        summary.append({"date": date.replace("-", "."), "count": 0})
+                        summary.append({"date": date, "count": 0})
 
             cursor.execute(sql_records)
             temp2 = cursor.fetchall()

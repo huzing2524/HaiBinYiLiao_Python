@@ -2,6 +2,7 @@ import logging
 import arrow
 import calendar
 
+import isoweek
 from django.db import connection as conn
 from django_redis import get_redis_connection
 from rest_framework import status
@@ -941,57 +942,110 @@ class HbDeviceHospitalCalendarIdType(APIView):
         if Id == 'all':
             condition_1 = ""
         else:
-            condition_1 = "and equipment_id = '{}'".format(Id)
+            condition_1 = "where equipment_id = '{}'".format(Id)
 
+        # 代码优化: 舍弃使用时间戳作为筛选条件, 直接使用sql日期查询
         if Type == 'daily':
-            sql = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM-DD') as d, count(1) from hb_treatment_logs where " \
-                  "time >= {} {} group by d order by d desc;"
+            sql = """
+            select to_char(to_timestamp(time), 'YYYY.MM.DD') as day, count(1)
+            from hb_treatment_logs """ + condition_1 + """ 
+            group by day
+            order by day desc;"""
+
+            date_list = [arrow.now().shift(days=-i).format("YYYY.MM.DD") for i in range(4, -1, -1)]
         elif Type == 'monthly':
-            sql = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM') as d, count(1) from hb_treatment_logs where time " \
-                  ">= {} {} group by d order by d desc limit 6;"
+            sql = """
+            select to_char(to_timestamp(time), 'YYYY.MM') as day, count(1)
+            from hb_treatment_logs """ + condition_1 + """ 
+            group by day
+            order by day desc;"""
+
+            date_list = [arrow.now().shift(months=-i).format("YYYY.MM") for i in range(4, -1, -1)]
         elif Type == 'weekly':
-            sql = "select count(1) from hb_treatment_logs where time >= {} and time < {} %s;" % condition_1
+            sql = """
+            select to_char(to_timestamp(time), 'iyyy.IW') as day, count(1)
+            from hb_treatment_logs """ + condition_1 + """ 
+            group by day
+            order by day desc;"""
+
+            date_list = [
+                str(arrow.now().shift(weeks=-i).isocalendar()[0]) + "." + str(
+                    arrow.now().shift(weeks=-i).isocalendar()[1]).zfill(2)
+                for i in range(4, -1, -1)]
         else:
             return Response({"res": 1, "errmsg": '日期类型参数有误'}, status=status.HTTP_200_OK)
-        target = ['date', 'count']
 
-        result = []
-        if Type == 'weekly':
-            start_timestamp = week_timestamp()[1]
-            tmp = list()
-            result = list()
-            times = 1
-            while len(tmp) <= 6:
-                start_timestamp -= 7 * 86400
-                date = '%d-%s' % (time.localtime(start_timestamp)[0], str(time.localtime(start_timestamp)[1]).zfill(2))
+        data, target = [], ['date', 'count']
+        cur.execute(sql)
+        result = dict(cur.fetchall())
 
-                if date in tmp:
-                    times += 1
-                    cur.execute(sql.format(start_timestamp, start_timestamp + 7 * 86400))
-                    date_start = datetime.datetime.fromtimestamp(start_timestamp)
-                    date_end = date_start - datetime.timedelta(days=-6)
-                    result.append({'date': date + '-' + str(times).zfill(2), 'count': cur.fetchone()[0],
-                                   'week_date': '%s-%s' % (date_start.strftime('%m.%d'), date_end.strftime('%m.%d'))})
-                    # result.append({'date': date + '-' + str(times).zfill(2), 'count': cur.fetchone()[0]})
-                elif len(tmp) < 6:
-                    times = 1
-                    cur.execute(sql.format(start_timestamp, start_timestamp + 7 * 86400))
-                    date_start = datetime.datetime.fromtimestamp(start_timestamp)
-                    date_end = date_start - datetime.timedelta(days=-6)
-                    result.append({'date': date + '-' + str(times).zfill(2), 'count': cur.fetchone()[0],
-                                   'week_date': '%s-%s' % (date_start.strftime('%m.%d'), date_end.strftime('%m.%d'))})
-                    # result.append({'date': date + '-' + str(times).zfill(2), 'count': cur.fetchone()[0]})
-                    tmp.append(date)
+        for date in date_list:
+            if Type == 'weekly':
+                transform_list = isoweek.Week(int(date.split(".")[0]), int(date.split(".")[-1])).days()
+                days_list = [day.strftime("%Y.%m.%d") for day in transform_list]
+                monday = days_list[0].split('.')[1:]
+                sunday = days_list[-1].split('.')[1:]
+                if date in result:
+                    data.append(
+                        {"date": '.'.join(monday) + "-" + '.'.join(sunday), "count": result[date]})
                 else:
-                    break
-        elif Type == 'daily' or Type == 'monthly':
-            year, month = time.localtime()[:2]
-            start_year, start_month = correct_time(year, month - 5)
-            start_timestamp = time.mktime(time.strptime('%d-%d-01' % (start_year, start_month), '%Y-%m-%d'))
-            cur.execute(sql.format(start_timestamp, condition_1))
-            result = [dict(zip(target, i)) for i in cur.fetchall()]
+                    data.append(
+                        {"date": '.'.join(monday) + "-" + '.'.join(sunday), "count": 0})
+            else:
+                if date in result:
+                    data.append({'date': date, 'count': result[date]})
+                else:
+                    data.append({'date': date, 'count': 0})
 
-        return Response(result, status=status.HTTP_200_OK)
+        # if Type == 'daily':
+        #     sql = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM-DD') as d, count(1) from hb_treatment_logs where " \
+        #           "time >= {} {} group by d order by d desc;"
+        # elif Type == 'monthly':
+        #     sql = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM') as d, count(1) from hb_treatment_logs where time " \
+        #           ">= {} {} group by d order by d desc limit 6;"
+        # elif Type == 'weekly':
+        #     sql = "select count(1) from hb_treatment_logs where time >= {} and time < {} %s;" % condition_1
+        # else:
+        #     return Response({"res": 1, "errmsg": '日期类型参数有误'}, status=status.HTTP_200_OK)
+        # target = ['date', 'count']
+        #
+        # result = []
+        # if Type == 'weekly':
+        #     start_timestamp = week_timestamp()[1]
+        #     tmp = list()
+        #     result = list()
+        #     times = 1
+        #     while len(tmp) <= 6:
+        #         start_timestamp -= 7 * 86400
+        #         date = '%d-%s' % (time.localtime(start_timestamp)[0], str(time.localtime(start_timestamp)[1]).zfill(2))
+        #
+        #         if date in tmp:
+        #             times += 1
+        #             cur.execute(sql.format(start_timestamp, start_timestamp + 7 * 86400))
+        #             date_start = datetime.datetime.fromtimestamp(start_timestamp)
+        #             date_end = date_start - datetime.timedelta(days=-6)
+        #             result.append({'date': date + '-' + str(times).zfill(2), 'count': cur.fetchone()[0],
+        #                            'week_date': '%s-%s' % (date_start.strftime('%m.%d'), date_end.strftime('%m.%d'))})
+        #             # result.append({'date': date + '-' + str(times).zfill(2), 'count': cur.fetchone()[0]})
+        #         elif len(tmp) < 6:
+        #             times = 1
+        #             cur.execute(sql.format(start_timestamp, start_timestamp + 7 * 86400))
+        #             date_start = datetime.datetime.fromtimestamp(start_timestamp)
+        #             date_end = date_start - datetime.timedelta(days=-6)
+        #             result.append({'date': date + '-' + str(times).zfill(2), 'count': cur.fetchone()[0],
+        #                            'week_date': '%s-%s' % (date_start.strftime('%m.%d'), date_end.strftime('%m.%d'))})
+        #             # result.append({'date': date + '-' + str(times).zfill(2), 'count': cur.fetchone()[0]})
+        #             tmp.append(date)
+        #         else:
+        #             break
+        # elif Type == 'daily' or Type == 'monthly':
+        #     year, month = time.localtime()[:2]
+        #     start_year, start_month = correct_time(year, month - 5)
+        #     start_timestamp = time.mktime(time.strptime('%d-%d-01' % (start_year, start_month), '%Y-%m-%d'))
+        #     cur.execute(sql.format(start_timestamp, condition_1))
+        #     result = [dict(zip(target, i)) for i in cur.fetchall()]
+
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class HbDoctorRankId(APIView):
