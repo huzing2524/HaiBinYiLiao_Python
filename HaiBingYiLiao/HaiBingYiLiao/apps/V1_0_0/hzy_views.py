@@ -517,6 +517,21 @@ class PatientsStatistics(APIView):
 
         data, summary, records, date_list, result = {}, [], [], [], []
 
+        '''
+        Note: 
+        timestamp 属性会转换成 UTC时区的时间戳, 因为时间戳都是统一的时区开始计算
+        arrow.get() 返回值是 UTC时间, 转换成本地时区时间有以下方法:
+        >>> import datetime, time, arrow
+        >>> from dateutil import tz
+        1. int(time.mktime(datetime.datetime(2020, 3, 2).timetuple()))  # 1583078400
+        2. int(arrow.get('2020-03-02').naive.timestamp())
+           int(arrow.get(2020, 3, 2).naive.timestamp())
+        3. arrow.get('2020-03-02').replace(tzinfo=tz.tzlocal()).timestamp
+        4. arrow.get(datetime.datetime(2020, 3, 2, tzinfo=tz.tzlocal())).timestamp
+        5. arrow.get(datetime.datetime(2020, 3, 2), 'Asia/Shanghai').timestamp
+        6. arrow.get('2020-03-02 00:00:00 Asia/Shanghai', 'YYYY-MM-DD HH:mm:ss ZZZ').timestamp
+        '''
+
         try:
             if choice == "day":
                 # 过去 按天 日期列表

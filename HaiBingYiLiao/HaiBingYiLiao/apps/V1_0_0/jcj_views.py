@@ -997,6 +997,8 @@ class HbDeviceHospitalCalendarIdType(APIView):
                 else:
                     data.append({'date': date, 'count': 0})
 
+        return Response(data, status=status.HTTP_200_OK)
+
         # if Type == 'daily':
         #     sql = "select to_char(TO_TIMESTAMP(time), 'YYYY-MM-DD') as d, count(1) from hb_treatment_logs where " \
         #           "time >= {} {} group by d order by d desc;"
@@ -1044,8 +1046,8 @@ class HbDeviceHospitalCalendarIdType(APIView):
         #     start_timestamp = time.mktime(time.strptime('%d-%d-01' % (start_year, start_month), '%Y-%m-%d'))
         #     cur.execute(sql.format(start_timestamp, condition_1))
         #     result = [dict(zip(target, i)) for i in cur.fetchall()]
-
-        return Response(data, status=status.HTTP_200_OK)
+        #
+        # return Response(result, status=status.HTTP_200_OK)
 
 
 class HbDoctorRankId(APIView):
