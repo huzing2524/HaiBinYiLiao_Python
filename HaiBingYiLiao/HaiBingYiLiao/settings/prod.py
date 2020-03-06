@@ -36,7 +36,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -82,17 +81,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'HaiBingYiLiao.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+
+# 正式环境 数据库配置
+POSTGRESQL_DATABASE = os.environ.get("PG_DATABASE")
+POSTGRESQL_USER = os.environ.get("PG_USER")
+POSTGRESQL_PASSWORD = os.environ.get("PG_PASSWORD")
+POSTGRESQL_HOST = os.environ.get("PG_HOST")
+POSTGRESQL_PORT = os.environ.get("PG_PORT")
 
 DATABASES = {
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     # }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': POSTGRESQL_DATABASE,
+        'USER': POSTGRESQL_USER,
+        'PASSWORD': POSTGRESQL_PASSWORD,
+        'HOST': POSTGRESQL_HOST,
+        'PORT': POSTGRESQL_PORT,
+    }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -112,7 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -125,7 +136,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = False
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
@@ -180,13 +190,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ()
 }
 
-# 正式环境 数据库配置
-POSTGRESQL_DATABASE = os.environ.get("PG_DATABASE")
-POSTGRESQL_USER = os.environ.get("PG_USER")
-POSTGRESQL_PASSWORD = os.environ.get("PG_PASSWORD")
-POSTGRESQL_HOST = os.environ.get("PG_HOST")
-POSTGRESQL_PORT = os.environ.get("PG_PORT")
-
 # 正式环境 RabbitMQ配置
 RABBITMQ_HOST = os.environ.get("RM_HOST")
 RABBITMQ_PORT = os.environ.get("RM_PORT")
@@ -216,4 +219,3 @@ CACHES = {
         }
     },
 }
-

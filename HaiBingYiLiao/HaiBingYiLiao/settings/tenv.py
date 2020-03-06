@@ -181,14 +181,14 @@ REST_FRAMEWORK = {
 }
 
 # 测试环境 数据库配置
-POSTGRESQL_DATABASE = os.environ.get("PG_DATABASE") or "db_dsdapp"
-POSTGRESQL_USER = os.environ.get("PG_USER") or "dsd"
-POSTGRESQL_PASSWORD = os.environ.get("PG_PASSWORD") or "dsdPassword"
-POSTGRESQL_HOST = os.environ.get("PG_HOST") or "120.77.221.233"
+POSTGRESQL_DATABASE = os.environ.get("PG_DATABASE") or "dsd"
+POSTGRESQL_USER = os.environ.get("PG_USER") or "postgres"
+POSTGRESQL_PASSWORD = os.environ.get("PG_PASSWORD") or "123456"
+POSTGRESQL_HOST = os.environ.get("PG_HOST") or "127.0.0.1"
 POSTGRESQL_PORT = os.environ.get("PG_PORT") or "5432"
 
 # RabbitMQ配置
-RABBITMQ_HOST = os.environ.get("RM_HOST") or '47.107.149.151'
+RABBITMQ_HOST = os.environ.get("RM_HOST") or '127.0.0.1'
 RABBITMQ_PORT = os.environ.get("RM_PORT") or '5672'
 
 # 图片存储路径
@@ -200,7 +200,7 @@ RABBITMQ_PORT = os.environ.get("RM_PORT") or '5672'
 IMAGE_PATH = "tenv"
 
 # 测试环境Redis数据库配置
-REDIS_HOST = os.environ.get("REDIS_HOST") or "47.107.149.151"
+REDIS_HOST = os.environ.get("REDIS_HOST") or "127.0.0.1"
 REDIS_PORT = os.environ.get("REDIS_PORT") or "6379"
 REDIS_DATABASE = os.environ.get("REDIS_DATABASE") or "1"
 

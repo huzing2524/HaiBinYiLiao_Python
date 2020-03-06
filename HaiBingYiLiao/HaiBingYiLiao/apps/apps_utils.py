@@ -96,7 +96,7 @@ class UtilsRabbitmq(object):
 
 class AliOss(object):
     """阿里云OSS 图片处理"""
-    auth = oss2.Auth('LTAIpVVnnK7jBiAr', '1nDeqBqyUlZzI7njadkgFrpetstdkc')
+    auth = oss2.Auth('', '')
     bucket = oss2.Bucket(auth, ' https://oss-cn-shenzhen.aliyuncs.com', 'dsd-images')
 
     def upload_image(self, image):

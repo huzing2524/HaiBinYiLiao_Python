@@ -3,7 +3,6 @@
 # @Author : huziying
 # @File   : middleware.py
 
-import time
 import jwt
 from django.conf import settings
 from django.http import HttpResponse
